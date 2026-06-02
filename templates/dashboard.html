@@ -1,0 +1,200 @@
+{% extends "layout.html" %}
+
+{% block title %}Dashboard - Sentinel Attendance{% endblock %}
+
+{% block page_header %}Dashboard{% endblock %}
+{% block page_description %}Overview of today's biometric attendance and registration statistics.{% endblock %}
+
+{% block content %}
+<div class="dashboard-stats">
+    <!-- Stat Card 1 -->
+    <div class="stat-card">
+        <div class="stat-icon icon-blue">
+            <i class="fa-solid fa-users"></i>
+        </div>
+        <div class="stat-info">
+            <h3>Total Registered</h3>
+            <p class="stat-value" id="stat-registered">{{ stats.total_registered }}</p>
+        </div>
+    </div>
+
+    <!-- Stat Card 2 -->
+    <div class="stat-card">
+        <div class="stat-icon icon-green">
+            <i class="fa-solid fa-user-check"></i>
+        </div>
+        <div class="stat-info">
+            <h3>Present Today</h3>
+            <p class="stat-value" id="stat-present">{{ stats.present_today }}</p>
+        </div>
+    </div>
+
+    <!-- Stat Card 3 -->
+    <div class="stat-card">
+        <div class="stat-icon icon-red">
+            <i class="fa-solid fa-user-xmark"></i>
+        </div>
+        <div class="stat-info">
+            <h3>Absent Today</h3>
+            <p class="stat-value" id="stat-absent">{{ stats.absent_today }}</p>
+        </div>
+    </div>
+
+    <!-- Stat Card 4 -->
+    <div class="stat-card">
+        <div class="stat-icon icon-purple">
+            <i class="fa-solid fa-chart-simple"></i>
+        </div>
+        <div class="stat-info">
+            <h3>Attendance Rate</h3>
+            <p class="stat-value" id="stat-rate">{{ stats.rate }}%</p>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-grid">
+    <!-- Chart Container -->
+    <div class="grid-card chart-container-card">
+        <div class="card-header">
+            <h2>Attendance Trends</h2>
+            <p>Unique check-ins over the last 7 active days</p>
+        </div>
+        <div class="card-body chart-body">
+            <canvas id="attendanceChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Recent Logs Container -->
+    <div class="grid-card recent-logs-card">
+        <div class="card-header">
+            <h2>Recent Check-Ins</h2>
+            <p>Latest active entries logged today</p>
+        </div>
+        <div class="card-body">
+            <div class="table-wrapper">
+                <table class="recent-table">
+                    <thead>
+                        <tr>
+                            <th>User ID</th>
+                            <th>Name</th>
+                            <th>Department</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recent-logs-tbody">
+                        {% if recent_logs %}
+                        {% for log in recent_logs %}
+                        <tr>
+                            <td><span class="id-badge">{{ log.User_ID }}</span></td>
+                            <td><strong>{{ log.Name }}</strong></td>
+                            <td>{{ log.Department }}</td>
+                            <td><span class="time-badge">{{ log.Time }}</span></td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted" style="padding: 2.5rem 0;">
+                                <i class="fa-solid fa-folder-open"
+                                    style="font-size: 2rem; opacity: 0.3; margin-bottom: 0.75rem; display: block;"></i>
+                                No attendance logged today yet.
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Load data from backend variables
+        const chartLabels = {{ trend_data.labels | tojson }};
+        const chartData = {{ trend_data.data | tojson }};
+
+    if (chartLabels.length === 0) {
+        // Show message instead of blank canvas if empty
+        const container = document.querySelector('.chart-body');
+        container.innerHTML = `
+                <div class="empty-chart-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; opacity: 0.5;">
+                    <i class="fa-solid fa-chart-line" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                    <p>No historical data available. Start scanning to plot trends.</p>
+                </div>
+            `;
+        return;
+    }
+
+    const ctx = document.getElementById('attendanceChart').getContext('2d');
+
+    // Define gradients for chart
+    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+    gradient.addColorStop(0, 'rgba(99, 102, 241, 0.4)'); // Indigo-500
+    gradient.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: chartLabels,
+            datasets: [{
+                label: 'Attendance Count',
+                data: chartData,
+                borderColor: '#818cf8',
+                borderWidth: 3,
+                backgroundColor: gradient,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#818cf8',
+                pointBorderColor: '#0b0f19',
+                pointBorderWidth: 2,
+                pointRadius: 6,
+                pointHoverRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    titleFont: { family: 'Outfit', size: 13, weight: 'bold' },
+                    bodyFont: { family: 'Outfit', size: 13 },
+                    padding: 12,
+                    cornerRadius: 8,
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.02)'
+                    },
+                    ticks: {
+                        color: '#94a3b8',
+                        font: { family: 'Outfit' }
+                    }
+                },
+                y: {
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.02)'
+                    },
+                    ticks: {
+                        color: '#94a3b8',
+                        font: { family: 'Outfit' },
+                        stepSize: 1,
+                        precision: 0
+                    },
+                    min: 0
+                }
+            }
+        }
+    });
+    });
+</script>
+{% endblock %}

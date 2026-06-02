@@ -1,0 +1,93 @@
+{% extends "layout.html" %}
+
+{% block title %}Face Scanner - Sentinel Attendance{% endblock %}
+
+{% block page_header %}Biometric Scanner{% endblock %}
+{% block page_description %}Position yourself in front of the camera to automatically log your attendance.{% endblock %}
+
+{% block content %}
+<div class="scanner-layout">
+    <!-- Camera Viewport Card -->
+    <div class="grid-card camera-card">
+        <div class="scanner-viewport-wrapper">
+            <div class="scanner-frame-overlay">
+                <!-- Glowing corner markers -->
+                <div class="corner top-left"></div>
+                <div class="corner top-right"></div>
+                <div class="corner bottom-left"></div>
+                <div class="corner bottom-right"></div>
+                <!-- Scanning animation line -->
+                <div class="scanner-line"></div>
+            </div>
+            <!-- Live feed source image -->
+            <img id="webcam-feed" src="{{ url_for('video_feed') }}" alt="Webcam Feed" class="camera-stream">
+            
+            <div class="stream-fallback" id="stream-fallback">
+                <i class="fa-solid fa-spinner fa-spin"></i>
+                <p>Initializing camera stream...</p>
+            </div>
+        </div>
+        <div class="camera-controls">
+            <div class="control-status">
+                <span class="pulse-dot green"></span>
+                <span class="status-text">Scanning Active</span>
+            </div>
+            <button id="toggle-camera-btn" class="btn btn-secondary btn-icon-only" title="Reinitialize Camera">
+                <i class="fa-solid fa-rotate-right"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Real-time Scan Feed Panel -->
+    <div class="grid-card scan-feed-card">
+        <div class="card-header border-bottom">
+            <h2>Scan Activity</h2>
+            <p>Live check-in events detected</p>
+        </div>
+        <div class="card-body scrollable-feed">
+            <div class="feed-timeline" id="live-scan-timeline">
+                <!-- Timeline items loaded dynamically via JS -->
+                <div class="timeline-empty-state" id="timeline-empty">
+                    <i class="fa-solid fa-fingerprint"></i>
+                    <p>Awaiting face recognition...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Handle image loading error (e.g. if camera is busy or failed to open)
+        const webcamFeed = document.getElementById("webcam-feed");
+        const streamFallback = document.getElementById("stream-fallback");
+        const toggleBtn = document.getElementById("toggle-camera-btn");
+        
+        webcamFeed.onerror = function() {
+            webcamFeed.style.display = 'none';
+            streamFallback.style.display = 'flex';
+            streamFallback.innerHTML = `
+                <i class="fa-solid fa-circle-exclamation" style="font-size: 2.5rem; color: #ef4444; margin-bottom: 1rem;"></i>
+                <p style="text-align: center; max-width: 80%;">Camera feed offline. Please ensure no other application is using your webcam and click refresh.</p>
+            `;
+            showAlert("error", "Webcam access failed. Check if another app is using the camera.");
+        };
+        
+        webcamFeed.onload = function() {
+            webcamFeed.style.display = 'block';
+            streamFallback.style.display = 'none';
+        };
+        
+        toggleBtn.addEventListener("click", function() {
+            // Reload the feed source to trigger a camera restart in backend
+            webcamFeed.src = "{{ url_for('video_feed') }}?t=" + new Date().getTime();
+            showAlert("info", "Reinitializing camera feed...");
+        });
+        
+        // Start polling for new scans to trigger audio beep and timeline update
+        initScannerPolling();
+    });
+</script>
+{% endblock %}

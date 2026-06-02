@@ -1,0 +1,23 @@
+# Compiled Python files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Large ONNX models (downloaded dynamically)
+models/*.onnx
+
+# User photos and cache
+images/*.jpg
+images/*.png
+images/cache/
+
+# Local database and attendance sheets
+Attendance.csv
+test_attendance.csv
+users.json
+
+# Local environments
+venv/
+.venv/
+env/
+.env

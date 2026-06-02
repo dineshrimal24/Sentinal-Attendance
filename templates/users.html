@@ -1,0 +1,149 @@
+{% extends "layout.html" %}
+
+{% block title %}User Registry - Sentinel Attendance{% endblock %}
+
+{% block page_header %}User Registry{% endblock %}
+{% block page_description %}Manage enrolled individuals and register new faces into the biometric system.{% endblock %}
+
+{% block content %}
+<div class="registry-layout">
+    <!-- Registration Form Card -->
+    <div class="grid-card registration-form-card">
+        <div class="card-header border-bottom">
+            <h2>Enroll New User</h2>
+            <p>Enter details and capture a facial sample</p>
+        </div>
+        <div class="card-body">
+            <form id="enrollment-form" method="POST" enctype="multipart/form-data">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="user_id">User ID / Roll No <span class="required">*</span></label>
+                        <input type="text" id="user_id" name="user_id" placeholder="e.g. EMP102" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="name">Full Name <span class="required">*</span></label>
+                        <input type="text" id="name" name="name" placeholder="e.g. Jane Doe" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="department">Department <span class="required">*</span></label>
+                        <input type="text" id="department" name="department" placeholder="e.g. Engineering" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" placeholder="e.g. jane@company.com">
+                    </div>
+                </div>
+                
+                <!-- Face Capture Section -->
+                <div class="capture-section">
+                    <label>Facial Sample Capture <span class="required">*</span></label>
+                    <div class="capture-tabs">
+                        <button type="button" class="tab-btn active" id="tab-webcam">Live Camera</button>
+                        <button type="button" class="tab-btn" id="tab-upload">Upload File</button>
+                    </div>
+                    
+                    <!-- Tab 1: Live Webcam Capture -->
+                    <div class="tab-content" id="content-webcam">
+                        <div class="webcam-capture-wrapper">
+                            <video id="capture-video" autoplay playsinline class="capture-video-el"></video>
+                            <canvas id="capture-canvas" style="display:none;"></canvas>
+                            <img id="capture-preview" class="capture-preview-el" style="display:none;">
+                            
+                            <div class="webcam-instructions" id="webcam-instruct">
+                                <i class="fa-solid fa-camera"></i>
+                                <p>Start camera to capture face image</p>
+                            </div>
+                        </div>
+                        <div class="capture-controls-wrapper">
+                            <button type="button" id="start-cam-btn" class="btn btn-secondary"><i class="fa-solid fa-play"></i> Start Camera</button>
+                            <button type="button" id="snap-btn" class="btn btn-primary" style="display:none;"><i class="fa-solid fa-camera"></i> Capture Photo</button>
+                            <button type="button" id="retake-btn" class="btn btn-secondary" style="display:none;"><i class="fa-solid fa-rotate-left"></i> Retake</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Tab 2: File Upload -->
+                    <div class="tab-content" id="content-upload" style="display:none;">
+                        <div class="file-upload-wrapper" id="drop-zone">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            <p id="upload-prompt">Drag & drop or browse face image</p>
+                            <span class="file-info" id="upload-filename">Supports JPEG, PNG (Min 300x300px)</span>
+                            <input type="file" id="file-input" name="file" accept="image/*" class="file-input-el">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Hidden inputs to hold image data -->
+                <input type="hidden" id="image_data" name="image_data">
+                <input type="hidden" id="capture_source" name="capture_source" value="webcam">
+                
+                <div class="form-actions">
+                    <button type="reset" id="reset-form-btn" class="btn btn-secondary">Clear Form</button>
+                    <button type="submit" class="btn btn-primary btn-submit-enroll"><i class="fa-solid fa-user-plus"></i> Enroll User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- User Directory Card -->
+    <div class="grid-card directory-card">
+        <div class="card-header border-bottom flex-between">
+            <div>
+                <h2>Registered Directory</h2>
+                <p>Enrolled personnel list (<span id="user-count">{{ users | length }}</span> users)</p>
+            </div>
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="directory-search" placeholder="Search by name, ID...">
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="directory-grid" id="directory-grid-container">
+                {% if users %}
+                    {% for user_id, details in users.items() %}
+                    <div class="user-card" id="user-card-{{ user_id }}" data-search="{{ details.name | lower }} {{ user_id | lower }} {{ details.department | lower }}">
+                        <div class="user-avatar-wrapper">
+                            <!-- Display face image -->
+                            <img src="/images/{{ user_id }}.jpg" alt="{{ details.name }}" onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed={{ user_id }}'">
+                        </div>
+                        <div class="user-card-info">
+                            <h3>{{ details.name }}</h3>
+                            <span class="id-badge">{{ user_id }}</span>
+                            <div class="user-meta-item">
+                                <i class="fa-solid fa-sitemap"></i>
+                                <span>{{ details.department }}</span>
+                            </div>
+                            {% if details.email %}
+                            <div class="user-meta-item">
+                                <i class="fa-solid fa-envelope"></i>
+                                <span class="email-text" title="{{ details.email }}">{{ details.email }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="user-card-actions">
+                            <button class="btn btn-danger delete-user-btn" data-id="{{ user_id }}" data-name="{{ details.name }}">
+                                <i class="fa-solid fa-trash-can"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="directory-empty-state" id="directory-empty">
+                        <i class="fa-solid fa-users-slash"></i>
+                        <p>No registered users found. Use the enrollment form to register your first face.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        initEnrollmentControls();
+        initDirectorySearch();
+        initDeleteUserHandlers();
+    });
+</script>
+{% endblock %}

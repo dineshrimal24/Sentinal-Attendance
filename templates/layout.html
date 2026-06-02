@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Face Recognition Attendance System{% endblock %}</title>
+    <!-- Google Fonts: Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for high-end vector icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Background glowing atmospheric circles -->
+    <div class="glow-bg">
+        <div class="glow-sphere sphere-1"></div>
+        <div class="glow-sphere sphere-2"></div>
+    </div>
+    
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <i class="fa-solid fa-shield-halved brand-icon"></i>
+                <div class="brand-text">
+                    <span class="brand-title">Sentinel</span>
+                    <span class="brand-subtitle">Attendance</span>
+                </div>
+            </div>
+            <nav class="nav-menu">
+                <a href="{{ url_for('dashboard') }}" class="nav-item {% if active_page == 'dashboard' %}active{% endif %}" id="nav-dashboard">
+                    <i class="fa-solid fa-chart-pie nav-icon"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('scanner') }}" class="nav-item {% if active_page == 'scanner' %}active{% endif %}" id="nav-scanner">
+                    <i class="fa-solid fa-expand nav-icon"></i>
+                    <span>Face Scanner</span>
+                </a>
+                <a href="{{ url_for('users') }}" class="nav-item {% if active_page == 'users' %}active{% endif %}" id="nav-users">
+                    <i class="fa-solid fa-address-book nav-icon"></i>
+                    <span>User Registry</span>
+                </a>
+                <a href="{{ url_for('reports') }}" class="nav-item {% if active_page == 'reports' %}active{% endif %}" id="nav-reports">
+                    <i class="fa-solid fa-clipboard-list nav-icon"></i>
+                    <span>Attendance Logs</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <p>System Version 1.0.0</p>
+                <div class="status-indicator">
+                    <span class="pulse-dot"></span>
+                    <span>System Online</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="content-header">
+                <div class="page-title">
+                    <h1>{% block page_header %}{% endblock %}</h1>
+                    <p class="page-description">{% block page_description %}{% endblock %}</p>
+                </div>
+                <div class="header-actions">
+                    <div id="live-time" class="live-clock">--:--:--</div>
+                </div>
+            </header>
+            
+            <section class="content-body">
+                <!-- Notifications container -->
+                <div id="alert-container"></div>
+                
+                {% block content %}{% endblock %}
+            </section>
+        </main>
+    </div>
+
+    <!-- Main JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

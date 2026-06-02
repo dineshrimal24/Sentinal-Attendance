@@ -1,0 +1,125 @@
+{% extends "layout.html" %}
+
+{% block title %}Attendance Logs - Sentinel Attendance{% endblock %}
+
+{% block page_header %}Attendance Logs{% endblock %}
+{% block page_description %}Search, filter, and export biometric attendance records.{% endblock %}
+
+{% block content %}
+<div class="reports-layout">
+    <!-- Filters Card -->
+    <div class="grid-card filters-card">
+        <div class="card-header border-bottom">
+            <h2>Filter Records</h2>
+            <p>Refine logs by time range, department, or individual</p>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('reports') }}" class="filters-form" id="filters-form">
+                <div class="filters-grid">
+                    <div class="form-group">
+                        <label for="name">Name or ID</label>
+                        <div class="input-icon-wrapper">
+                            <i class="fa-solid fa-user"></i>
+                            <input type="text" id="name" name="name" value="{{ filters.name }}" placeholder="Search name or ID...">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="department">Department</label>
+                        <div class="input-icon-wrapper">
+                            <i class="fa-solid fa-sitemap"></i>
+                            <input type="text" id="department" name="department" value="{{ filters.department }}" placeholder="e.g. Engineering">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="date_from">Date From</label>
+                        <div class="input-icon-wrapper">
+                            <i class="fa-solid fa-calendar-day"></i>
+                            <input type="date" id="date_from" name="date_from" value="{{ filters.date_from }}">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="date_to">Date To</label>
+                        <div class="input-icon-wrapper">
+                            <i class="fa-solid fa-calendar-day"></i>
+                            <input type="date" id="date_to" name="date_to" value="{{ filters.date_to }}">
+                        </div>
+                    </div>
+                </div>
+                <div class="filters-actions">
+                    <a href="{{ url_for('reports') }}" class="btn btn-secondary"><i class="fa-solid fa-arrow-rotate-left"></i> Reset Filters</a>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Apply Filters</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Records Card -->
+    <div class="grid-card records-card">
+        <div class="card-header border-bottom flex-between">
+            <div>
+                <h2>Attendance Sheets</h2>
+                <p>Showing {{ logs | length }} records matched</p>
+            </div>
+            <div class="export-actions">
+                <button type="button" id="export-csv-btn" class="btn btn-secondary btn-sm"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+                <button type="button" id="export-excel-btn" class="btn btn-secondary btn-sm"><i class="fa-solid fa-file-excel"></i> Export Excel</button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-wrapper main-table-wrapper">
+                <table class="main-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>User ID</th>
+                            <th>Name</th>
+                            <th>Department</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if logs %}
+                            {% for log in logs %}
+                            <tr>
+                                <td><span class="date-badge"><i class="fa-regular fa-calendar"></i> {{ log.Date }}</span></td>
+                                <td><span class="time-badge"><i class="fa-regular fa-clock"></i> {{ log.Time }}</span></td>
+                                <td><span class="id-badge">{{ log.User_ID }}</span></td>
+                                <td><strong>{{ log.Name }}</strong></td>
+                                <td>{{ log.Department }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted" style="padding: 4rem 0;">
+                                    <i class="fa-solid fa-circle-exclamation" style="font-size: 2.5rem; opacity: 0.3; margin-bottom: 1rem; display: block;"></i>
+                                    No records found matching the criteria.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const exportCsvBtn = document.getElementById("export-csv-btn");
+        const exportExcelBtn = document.getElementById("export-excel-btn");
+        
+        // Export helpers that retain the current filter criteria
+        function triggerExport(format) {
+            const form = document.getElementById("filters-form");
+            const params = new URLSearchParams(new FormData(form));
+            params.append("format", format);
+            window.location.href = "{{ url_for('export_logs') }}?" + params.toString();
+        }
+        
+        exportCsvBtn.addEventListener("click", () => triggerExport("csv"));
+        exportExcelBtn.addEventListener("click", () => triggerExport("excel"));
+    });
+</script>
+{% endblock %}
